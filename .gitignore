@@ -1,9 +1,9 @@
 # Токены
-token.txt
 .env
 
 # Python
 __pycache__/
+.venv/
 
 # Логи
 *.log
