@@ -10,4 +10,4 @@ class FileManager:
             file_name += '.txt'
         path = os.path.join(path.value, file_name)
         with open(path, 'r', encoding='UTF-8') as file:
-            return file.read()
+            return file.read().strip()

@@ -21,3 +21,24 @@ class GPTMessage:
     def _load_prompt(self) -> str:
         prompt = FileManager.read_txt(Path.PROMPTS, self._prompt_path)
         return prompt
+
+    def update(self, role: GPTRole, message: str):
+        message = {
+            'role': role.value,
+            'content': message,
+        }
+        self.message_list.append(message)
+
+    def json(self):
+        item = json.dumps(
+            self,
+            default=lambda i: i.__dict__,
+            ensure_ascii=False,
+            indent=4
+        )
+        return item
+
+    @classmethod
+    def from_json(cls, data: str):
+        json_data = json.loads(data)
+        return cls(json_data['_prompt_name'], json_data['message_list'])

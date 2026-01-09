@@ -1,1 +1,1 @@
-from .inl_keyboards import keyboard_main_menu, random
+from .inl_keyboards import inl_main_menu, inl_random_menu, inl_gpt_menu, inl_gpt_cancel
