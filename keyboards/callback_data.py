@@ -1,12 +1,14 @@
 from aiogram.filters.callback_data import CallbackData
 
-def CallbackMenu(CallbackData, prefix='CM'):
+class CallbackMenu(CallbackData, prefix='CM'):
     button: str
 
-def CallbackTalk(CallbackData, prefix='CT'):
+
+class CallbackTalk(CallbackData, prefix='CT'):
     button: str
     celebrity: str
 
-def CallbackQUIZ(CallbackData, prefix='CQ'):
+
+class CallbackQUIZ(CallbackData, prefix='CQ'):
     button: str
     subject: str

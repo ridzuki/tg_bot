@@ -1,1 +1,1 @@
-from .int_keyboards import keyboard_main_menu, random
+from .inl_keyboards import keyboard_main_menu, random

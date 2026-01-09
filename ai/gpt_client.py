@@ -1,7 +1,8 @@
+import json
 import openai
-from aiogram import Bot
-
 import config
+
+from aiogram import Bot
 from .enums import GPTModel
 from .messages import GPTMessage
 
@@ -14,10 +15,11 @@ class GPTService:
             cls._instance = super().__new__(cls)
         return cls._instance
 
-    def __init__(self, model: GPTModel = GPTModel.GPT_4_TURBO):
+    def __init__(self, text_model: GPTModel.GPT_4_TURBO, image_model: GPTModel.GPT_IMAGE):
         self._gpt_token = config.AI_TOKEN
         self._client = self._create_client()
-        self._model = model.value
+        self._text_model = text_model.value
+        self._image_model = image_model.value
 
     def _create_client(self):
         gpt_client = openai.AsyncOpenAI(
@@ -29,7 +31,7 @@ class GPTService:
         try:
             response = await self._client.chat.completions.create(
                 messages=message_list.message_list,
-                model=self._model,
+                model=self._text_model,
             )
             return response.choices[0].message.content
         except Exception as e:
@@ -37,3 +39,18 @@ class GPTService:
                 chat_id=config.ADMIN_ID,
                 text=str(e),
             )
+
+    async def generate_image(self, prompt: str, bot: Bot) -> str:
+        try:
+            image = await self._client.images.generate(
+                model=self._image_model,
+                prompt=prompt,
+                size="1024x1024"
+            )
+            return image.data[0].url
+        except Exception as e:
+            await bot.send_message(
+                chat_id=config.ADMIN_ID,
+                text=str(e),
+            )
+            raise

@@ -4,6 +4,10 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from .callback_data import CallbackMenu, CallbackTalk, CallbackQUIZ
 
+import os
+from utils.enum_path import Path
+from utils import FileManager
+
 
 Button = namedtuple('Button', ['text', 'callback'])
 
@@ -19,7 +23,7 @@ def keyboard_main_menu():
     for button in buttons:
         keyboard.button(
             text=button.text,
-            callback=CallbackMenu(button=button.callback)
+            callback_data=CallbackMenu(button=button.callback)
         )
     keyboard.adjust(2,2)
     return keyboard.as_markup()
@@ -33,6 +37,6 @@ def random():
     for button in buttons:
         keyboard.button(
             text=button.text,
-            callback=CallbackMenu(button=button.callback),
+            callback_data=CallbackMenu(button=button.callback),
         )
     return keyboard.as_markup()
