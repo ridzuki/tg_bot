@@ -1,1 +1,1 @@
-from .inl_keyboards import inl_main_menu, inl_random_menu, inl_gpt_menu, inl_gpt_cancel
+from .inl_keyboards import inl_main_menu, inl_random_menu, inl_gpt_menu, inl_gpt_cancel, inl_talk_menu, inl_cancel, inl_quiz_menu, inl_quiz_topics

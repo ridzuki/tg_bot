@@ -1,17 +1,17 @@
-from aiogram import Router, Bot, F
-from aiogram.filters import Command, CommandObject
-from aiogram.types import Message, InputMediaPhoto, CallbackQuery
+from aiogram import Router, Bot
+from aiogram.types import Message, InputMediaPhoto
 from aiogram.types.input_file import FSInputFile
 from aiogram.enums.chat_action import ChatAction
 from aiogram.fsm.context import FSMContext
 
-from .fsm import GPTRequest, CelebrityTalk, QUIZ
+from keyboards.inl_keyboards import inl_translate_menu
+from logger import logger
 
-from keyboards import inl_main_menu, inl_random_menu, inl_gpt_menu
-from keyboards.callback_data import CallbackMenu
+from .fsm import GPTRequest, CelebrityTalk, QUIZ, Translate
+
+from keyboards import inl_gpt_menu, inl_cancel, inl_quiz_menu
 
 from utils.loading import LoadingController
-from utils import FileManager
 from utils.enum_path import Path
 
 from ai import chat_gpt
@@ -21,11 +21,14 @@ from ai.enums import GPTRole
 fsm_router = Router()
 
 @fsm_router.message(GPTRequest.wait_for_request)
-async def wait_for_user_request(message: Message, state: FSMContext, bot: Bot):
+async def wait_for_user_request(message: Message, bot: Bot):
     """
         Ожидание запроса от пользователя
     """
     chat_id = message.chat.id
+
+    logger.info(f"[GPTRequest] User {chat_id} answer: {message.text}")
+
     loading_message = await bot.send_photo(
         chat_id=chat_id,
         photo=FSInputFile(Path.IMAGES.value.format(file="gpt")),
@@ -45,7 +48,13 @@ async def wait_for_user_request(message: Message, state: FSMContext, bot: Bot):
         chat_id=message.from_user.id,
         message_id=message.message_id,
     )
-    response = await chat_gpt.request(msg_list, bot)
+    try:
+        response = await chat_gpt.request(msg_list, bot)
+        logger.info(f"[GPTRequest] GPT {chat_id} answer: {response}")
+    except Exception as e:
+        logger.error(f"[GPTRequest] Error request processing GPT answer {chat_id}: {e}")
+        response = "Error"
+
     await loader.stop()
     await bot.edit_message_media(
         media=InputMediaPhoto(
@@ -57,5 +66,97 @@ async def wait_for_user_request(message: Message, state: FSMContext, bot: Bot):
         reply_markup=inl_gpt_menu()
     )
 
+
+@fsm_router.message(QUIZ.game)
+async def user_answer(message: Message, state: FSMContext, bot: Bot):
+    """
+        Обработка ответа на QUIZ от юзера
+    """
+    chat_id = message.from_user.id
+    logger.info(f"[QUIZ] User {chat_id} answer: {message.text}")
+
+    message_list = await state.get_value('messages')
+    message_id = await state.get_value('message_id')
+    score = await state.get_value('score') or 0
+    message_list.update(GPTRole.USER, message.text)
+    response = await chat_gpt.request(message_list, bot)
+    message_list.update(GPTRole.CHAT, response)
+    await state.update_data(messages=message_list)
+    if response == 'Правильно!':
+        score += 1
+        await state.update_data(score=score)
+    response += f'\n\nВаш счет: {score} баллов!'
+    logger.info(f"[QUIZ] GPT {chat_id} answer: {response}")
+
+    await bot.delete_message(
+        chat_id=message.from_user.id,
+        message_id=message.message_id,
+    )
+    await bot.edit_message_media(
+        media=InputMediaPhoto(
+            media=FSInputFile(Path.IMAGES.value.format(file='quiz')),
+            caption=response,
+        ),
+        chat_id=message.from_user.id,
+        message_id=message_id,
+        reply_markup=inl_quiz_menu(),
+    )
+
+
+@fsm_router.message(CelebrityTalk.dialog)
+async def celebrity_talk(message: Message, state: FSMContext, bot: Bot):
+    """
+        Обработка сообщения от пользователя на разговор с извезстными личностями
+    """
+    chat_id=message.chat.id
+    logger.info(f"[CelebrityTalk] User {chat_id} answer: {message.text}")
+
+    await bot.send_chat_action(
+        chat_id=chat_id,
+        action=ChatAction.TYPING
+    )
+    message_list = await state.get_value('messages')
+    celebrity = await state.get_value('celebrity')
+    message_list.update(GPTRole.USER, message.text)
+    response = await chat_gpt.request(message_list, bot)
+    message_list.update(GPTRole.CHAT, response)
+    await state.update_data(messages=message_list)
+    logger.info(f"[CelebrityTalk] GPT {chat_id} answer: {response}")
+    await bot.send_photo(
+        chat_id=message.from_user.id,
+        photo=FSInputFile(Path.IMAGES.value.format(file=celebrity)),
+        caption=response,
+        reply_markup=inl_cancel()
+    )
+
+
+@fsm_router.message(Translate.text)
+async def translate_text(message: Message, state: FSMContext, bot: Bot):
+    chat_id=message.from_user.id
+    data = await state.get_data()
+    language = data.get('language')
+    user_text = message.text
+    logger.info(f"[Translate] User {chat_id} text: {user_text}")
+
+    await bot.send_chat_action(
+        chat_id=chat_id,
+        action=ChatAction.TYPING
+    )
+
+    msg_list = GPTMessage('translate')
+    msg_list.update(GPTRole.USER, f"Переведи на {language}: {user_text}")
+
+    try:
+        response = await chat_gpt.request(msg_list, bot)
+        logger.info(f"[Translate] GPT {chat_id} answer: {response}")
+    except Exception as e:
+        logger.error(f"[Translate] Error request processing GPT answer {chat_id}: {e}")
+        response = "Произошла ошибка при переводе."
+
+    await bot.send_message(
+        chat_id=chat_id,
+        text=response,
+        reply_markup=inl_translate_menu()
+    )
 
 

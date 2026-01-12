@@ -2,7 +2,7 @@ from collections import namedtuple
 
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from .callback_data import CallbackMenu, CallbackTalk, CallbackQUIZ
+from .callback_data import CallbackMenu, CallbackTalk, CallbackQUIZ, CallbackTranslate
 
 import os
 from utils.enum_path import Path
@@ -102,3 +102,50 @@ def inl_gpt_cancel():
         callback_data=CallbackMenu(button='start'),
     )
     return keyboard.as_markup()
+
+def inl_talk_menu():
+    celebrities = [file.rsplit('.', 1)[0] for file in os.listdir(Path.IMG_DIR.value) if file.startswith('talk_')]
+    keyboard = InlineKeyboardBuilder()
+    for celebrity in celebrities:
+        text_button = FileManager.read_txt(Path.PROMPTS, celebrity).split(',', 1)[0].split(' - ')[-1]
+        keyboard.button(
+            text=text_button,
+            callback_data=CallbackTalk(
+                button = 'talk',
+                celebrity=celebrity
+            )
+        )
+    keyboard.button(
+        text='В главное меню',
+        callback_data=CallbackMenu(button='start'),
+    )
+    keyboard.adjust(1)
+    return keyboard.as_markup()
+
+def inl_cancel():
+    keyboard = InlineKeyboardBuilder()
+    keyboard.button(
+        text='Закончить!',
+        callback_data=CallbackMenu(button='start'),
+    )
+    return keyboard.as_markup()
+
+def inl_translate_menu():
+    keyboard = InlineKeyboardBuilder()
+    buttons = [
+        Button('Английский', 'en'),
+        Button('Греческий', 'gr'),
+        Button('Русский', 'ru')
+    ]
+    for button in buttons:
+        keyboard.button(
+            text=button.text,
+            callback_data=CallbackTranslate(language=button.callback),
+        )
+    keyboard.button(
+        text="Закончить!",
+        callback_data=CallbackMenu(button="start")
+    )
+    keyboard.adjust(2)
+    return keyboard.as_markup()
+

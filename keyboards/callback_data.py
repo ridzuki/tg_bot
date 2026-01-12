@@ -12,3 +12,7 @@ class CallbackTalk(CallbackData, prefix='CT'):
 class CallbackQUIZ(CallbackData, prefix='CQ'):
     button: str
     subject: str
+
+
+class CallbackTranslate(CallbackData, prefix="CTLang"):
+    language: str
