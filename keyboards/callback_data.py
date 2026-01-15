@@ -15,4 +15,11 @@ class CallbackQUIZ(CallbackData, prefix='CQ'):
 
 
 class CallbackTranslate(CallbackData, prefix="CTLang"):
+    button: str
     language: str
+
+
+class CallbackRecommend(CallbackData, prefix="CR"):
+    button: str
+    category: str
+    genre: str

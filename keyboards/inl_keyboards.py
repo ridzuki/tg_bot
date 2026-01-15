@@ -2,7 +2,8 @@ from collections import namedtuple
 
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from .callback_data import CallbackMenu, CallbackTalk, CallbackQUIZ, CallbackTranslate
+from utils.builder import build_topic_map
+from .callback_data import CallbackMenu, CallbackTalk, CallbackQUIZ, CallbackTranslate, CallbackRecommend
 
 import os
 from utils.enum_path import Path
@@ -16,9 +17,10 @@ def inl_main_menu():
     buttons = [
         Button('Рандомный факт 🧠', 'random'),
         Button('КВИЗ! ❓', 'quiz'),
-        Button('Перевести', 'translate'),
+        Button('Переводчик 🌐', 'translate'),
         Button('Спросить GPT 🤖', 'gpt'),
-        Button('Разговор со звездой 👤', 'talk')
+        Button('Разговор со звездой 👤', 'talk'),
+        Button('Рекомендации', 'recommendation')
     ]
     for button in buttons:
         keyboard.button(
@@ -140,7 +142,10 @@ def inl_translate_menu():
     for button in buttons:
         keyboard.button(
             text=button.text,
-            callback_data=CallbackTranslate(language=button.callback),
+            callback_data=CallbackTranslate(
+                button='translate',
+                language=button.callback
+            ),
         )
     keyboard.button(
         text="Закончить!",
@@ -149,3 +154,58 @@ def inl_translate_menu():
     keyboard.adjust(2)
     return keyboard.as_markup()
 
+def inl_translate_back():
+    keyboard = InlineKeyboardBuilder()
+    keyboard.button(
+        text='Сменить язык',
+        callback_data=CallbackMenu(button='translate'),
+    )
+    return keyboard.as_markup()
+
+def inl_recommendation_topics():
+    keyboard = InlineKeyboardBuilder()
+    topic_map = build_topic_map(Path.OTHER, "genres.txt")
+    for topic_name, data in topic_map.items():
+        keyboard.button(
+            text=data["category"],
+            callback_data=CallbackRecommend(
+                button='recommendation',
+                category=topic_name,
+                genre = ""
+            )
+        )
+    keyboard.button(
+        text='Закончить!',
+        callback_data=CallbackMenu(button='start')
+    )
+
+    keyboard.adjust(1)
+    return keyboard.as_markup()
+
+def inl_recommendation_genre(category):
+    topic_map = build_topic_map(Path.OTHER, "genres.txt")
+    data = topic_map.get(category)
+    if not data:
+        return None
+
+    keyboard = InlineKeyboardBuilder()
+    for genre_id, display_name in data["genres"].items():
+        keyboard.button(
+            text=display_name,
+            callback_data=CallbackRecommend(
+                button='recommendation',
+                category='',
+                genre=genre_id
+            )
+        )
+
+    keyboard.button(
+        text='К выбору категории',
+        callback_data=CallbackMenu(button='recommendation')
+    )
+
+    keyboard.adjust(2)
+    return keyboard.as_markup()
+
+def inl_recommend_more():
+    pass

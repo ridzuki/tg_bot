@@ -9,11 +9,12 @@ from logger import logger
 
 from ai.enums import GPTRole
 
-from .fsm import GPTRequest, CelebrityTalk, QUIZ, Translate
+from .fsm import GPTRequest, CelebrityTalk, QUIZ, Translate, Recommendation
 
 from keyboards import inl_cancel
-from keyboards.inl_keyboards import inl_main_menu, inl_random_menu, inl_gpt_cancel, inl_talk_menu, inl_quiz_topics, inl_translate_menu
-from keyboards.callback_data import CallbackMenu, CallbackTalk, CallbackQUIZ, CallbackTranslate
+from keyboards.inl_keyboards import inl_main_menu, inl_random_menu, inl_gpt_cancel, inl_talk_menu, inl_quiz_topics, \
+    inl_translate_menu, inl_translate_back, inl_recommendation_topics, inl_recommendation_genre, inl_recommend_more
+from keyboards.callback_data import CallbackMenu, CallbackTalk, CallbackQUIZ, CallbackTranslate, CallbackRecommend
 
 from utils import FileManager
 from utils.enum_path import Path
@@ -236,7 +237,7 @@ async def translate_text(callback: CallbackQuery, callback_data: CallbackTransla
     logger.info(f"[Translate] User {chat_id} selected language: {lang}")
 
     await state.set_state(Translate.text)
-    await state.update_data(language=lang)
+    await state.update_data(language=lang, message_id=callback.message.message_id)
 
     await bot.edit_message_media(
         media=InputMediaPhoto(
@@ -245,6 +246,53 @@ async def translate_text(callback: CallbackQuery, callback_data: CallbackTransla
         ),
         chat_id = chat_id,
         message_id = callback.message.message_id,
-        reply_markup = inl_cancel()
+        reply_markup = inl_translate_back()
     )
+
+
+@inline_router.callback_query(CallbackMenu.filter(F.button == 'recommendation'))
+async def recommendation_menu(callback: CallbackQuery, callback_data: CallbackMenu, bot: Bot):
+    """
+        Меню рекомендаций
+    """
+    chat_id = callback.from_user.id
+    logger.info(f"[Recommendation] User {chat_id} opens recommendation menu")
+
+    await bot.edit_message_media(
+        media=InputMediaPhoto(
+            media=FSInputFile(Path.IMAGES.value.format(file=callback_data.button)),
+            caption=FileManager.read_txt(Path.MESSAGES, callback_data.button),
+        ),
+        chat_id=chat_id,
+        message_id=callback.message.message_id,
+        reply_markup=inl_recommendation_topics()
+    )
+
+
+@inline_router.callback_query(CallbackRecommend.filter(F.category))
+async def genres_menu(callback: CallbackQuery, callback_data: CallbackRecommend, state: FSMContext, bot: Bot):
+    """
+        Меню жанров для выбранной темы
+    """
+    chat_id = callback.from_user.id
+    message_id = callback.message.message_id
+    category = callback_data.category
+    logger.info(f"[Recommendation] User {chat_id} opens genre menu for category: {category}")
+
+    await bot.edit_message_media(
+        media=InputMediaPhoto(
+            media=FSInputFile(Path.IMAGES.value.format(file=callback_data.button)),
+            caption="Выберите жанр 👇",
+        ),
+        chat_id=chat_id,
+        message_id=message_id,
+        reply_markup=inl_recommendation_genre(category)
+    )
+
+
+@inline_router.callback_query(CallbackRecommend.filter(F.genre))
+async def take_recommendation(callback: CallbackQuery, callback_data: CallbackRecommend, state: FSMContext, bot: Bot):
+    """
+        Выдача рекомендаций
+    """
 

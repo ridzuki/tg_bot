@@ -4,10 +4,10 @@ from aiogram.types.input_file import FSInputFile
 from aiogram.enums.chat_action import ChatAction
 from aiogram.fsm.context import FSMContext
 
-from keyboards.inl_keyboards import inl_translate_menu
+from keyboards.inl_keyboards import inl_translate_back
 from logger import logger
 
-from .fsm import GPTRequest, CelebrityTalk, QUIZ, Translate
+from .fsm import GPTRequest, CelebrityTalk, QUIZ, Translate, Recommendation
 
 from keyboards import inl_gpt_menu, inl_cancel, inl_quiz_menu
 
@@ -21,7 +21,7 @@ from ai.enums import GPTRole
 fsm_router = Router()
 
 @fsm_router.message(GPTRequest.wait_for_request)
-async def wait_for_user_request(message: Message, bot: Bot):
+async def gpt_wait_for_request(message: Message, bot: Bot):
     """
         Ожидание запроса от пользователя
     """
@@ -106,7 +106,7 @@ async def user_answer(message: Message, state: FSMContext, bot: Bot):
 @fsm_router.message(CelebrityTalk.dialog)
 async def celebrity_talk(message: Message, state: FSMContext, bot: Bot):
     """
-        Обработка сообщения от пользователя на разговор с извезстными личностями
+        Обработка сообщения от пользователя на разговор с известными личностями
     """
     chat_id=message.chat.id
     logger.info(f"[CelebrityTalk] User {chat_id} answer: {message.text}")
@@ -132,8 +132,12 @@ async def celebrity_talk(message: Message, state: FSMContext, bot: Bot):
 
 @fsm_router.message(Translate.text)
 async def translate_text(message: Message, state: FSMContext, bot: Bot):
+    """
+        Обработка сообщения от пользователя и перевод
+    """
     chat_id=message.from_user.id
     data = await state.get_data()
+    message_id = data.get('message_id')
     language = data.get('language')
     user_text = message.text
     logger.info(f"[Translate] User {chat_id} text: {user_text}")
@@ -153,10 +157,24 @@ async def translate_text(message: Message, state: FSMContext, bot: Bot):
         logger.error(f"[Translate] Error request processing GPT answer {chat_id}: {e}")
         response = "Произошла ошибка при переводе."
 
-    await bot.send_message(
-        chat_id=chat_id,
-        text=response,
-        reply_markup=inl_translate_menu()
+    await bot.delete_message(
+        chat_id=message.from_user.id,
+        message_id=message.message_id,
     )
 
+    await bot.edit_message_media(
+        media=InputMediaPhoto(
+            media=FSInputFile(Path.IMAGES.value.format(file='translate')),
+            caption=response,
+        ),
+        chat_id=chat_id,
+        message_id=message_id,
+        reply_markup=inl_translate_back(),
+    )
+
+
+@fsm_router.callback_query(Recommendation.genre)
+async def recommendation(message: Message, state: FSMContext, bot: Bot):
+    chat_id = message.from_user.id
+    logger.info(f"[Recommendation] User {chat_id} message: {message.text}")
 

@@ -7,3 +7,4 @@ class Path(Enum):
     IMG_DIR = os.path.join('resources', 'images')
     MESSAGES = os.path.join('resources', 'messages')
     IMAGES = os.path.join('resources', 'images', '{file}.jpg')
+    OTHER = os.path.join('resources', 'other')

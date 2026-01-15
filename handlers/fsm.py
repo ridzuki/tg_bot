@@ -15,3 +15,7 @@ class QUIZ(StatesGroup):
 
 class Translate(StatesGroup):
     text = State()
+
+
+class Recommendation(StatesGroup):
+    genre = State()
