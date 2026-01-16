@@ -8,6 +8,7 @@ from aiogram.fsm.context import FSMContext
 from logger import logger
 
 from ai.enums import GPTRole
+from misc import print_message
 
 from .fsm import GPTRequest, CelebrityTalk, QUIZ, Translate, Recommendation
 
@@ -295,4 +296,25 @@ async def take_recommendation(callback: CallbackQuery, callback_data: CallbackRe
     """
         Выдача рекомендаций
     """
+    chat_id = callback.from_user.id
+    message_id = callback.message.message_id
+    category = callback_data.category
+    genre = callback_data.genre
+    logger.info(f"[Recommendation] User {chat_id} takes recommendation for category: {category} and genre: {genre}")
+    await state.set_state(Recommendation.get_recommendation)
+    msg_list = GPTMessage('recommendation.txt')
+    msg_list.update(GPTRole.USER, f"{category} {genre}")
+    await state.update_data(messages=msg_list.message_list, category=category, genre=genre)
+
+    response = await chat_gpt.request(msg_list, bot)
+    msg_list.update(GPTRole.CHAT, response)
+    await bot.edit_message_media(
+        media=InputMediaPhoto(
+            media=FSInputFile(Path.IMAGES.value.format(file=callback_data.genre)),
+            caption=response,
+        ),
+        chat_id=chat_id,
+        message_id=message_id,
+        reply_markup=inl_cancel()
+    )
 
