@@ -27,7 +27,7 @@ async def gpt_wait_for_request(message: Message, bot: Bot):
     """
     chat_id = message.chat.id
 
-    logger.info(f"[GPTRequest] User {chat_id} answer: {message.text}")
+    logger.info(f"[GPTRequestFSM] User {chat_id} answer: {message.text}")
 
     loading_message = await bot.send_photo(
         chat_id=chat_id,
@@ -50,9 +50,9 @@ async def gpt_wait_for_request(message: Message, bot: Bot):
     )
     try:
         response = await chat_gpt.request(msg_list, bot)
-        logger.info(f"[GPTRequest] GPT {chat_id} answer: {response}")
+        logger.info(f"[GPTRequestFSM] GPT {chat_id} answer: {response}")
     except Exception as e:
-        logger.error(f"[GPTRequest] Error request processing GPT answer {chat_id}: {e}")
+        logger.error(f"[GPTRequestFSM] Error request processing GPT answer {chat_id}: {e}")
         response = "Error"
 
     await loader.stop()
@@ -73,7 +73,7 @@ async def user_answer(message: Message, state: FSMContext, bot: Bot):
         Обработка ответа на QUIZ от юзера
     """
     chat_id = message.from_user.id
-    logger.info(f"[QUIZ] User {chat_id} answer: {message.text}")
+    logger.info(f"[QUIZFSM] User {chat_id} answer: {message.text}")
 
     message_list = await state.get_value('messages')
     message_id = await state.get_value('message_id')
@@ -86,7 +86,7 @@ async def user_answer(message: Message, state: FSMContext, bot: Bot):
         score += 1
         await state.update_data(score=score)
     response += f'\n\nВаш счет: {score} баллов!'
-    logger.info(f"[QUIZ] GPT {chat_id} answer: {response}")
+    logger.info(f"[QUIZFSM] GPT {chat_id} answer: {response}")
 
     await bot.delete_message(
         chat_id=message.from_user.id,
@@ -109,7 +109,7 @@ async def celebrity_talk(message: Message, state: FSMContext, bot: Bot):
         Обработка сообщения от пользователя на разговор с известными личностями
     """
     chat_id=message.chat.id
-    logger.info(f"[CelebrityTalk] User {chat_id} answer: {message.text}")
+    logger.info(f"[CelebrityTalkFSM] User {chat_id} answer: {message.text}")
 
     await bot.send_chat_action(
         chat_id=chat_id,
@@ -121,7 +121,7 @@ async def celebrity_talk(message: Message, state: FSMContext, bot: Bot):
     response = await chat_gpt.request(message_list, bot)
     message_list.update(GPTRole.CHAT, response)
     await state.update_data(messages=message_list)
-    logger.info(f"[CelebrityTalk] GPT {chat_id} answer: {response}")
+    logger.info(f"[CelebrityTalkFSM] GPT {chat_id} answer: {response}")
     await bot.send_photo(
         chat_id=message.from_user.id,
         photo=FSInputFile(Path.IMAGES.value.format(file=celebrity)),
@@ -152,9 +152,9 @@ async def translate_text(message: Message, state: FSMContext, bot: Bot):
 
     try:
         response = await chat_gpt.request(msg_list, bot)
-        logger.info(f"[Translate] GPT {chat_id} answer: {response}")
+        logger.info(f"[TranslateFSM] GPT {chat_id} answer: {response}")
     except Exception as e:
-        logger.error(f"[Translate] Error request processing GPT answer {chat_id}: {e}")
+        logger.error(f"[TranslateFSM] Error request processing GPT answer {chat_id}: {e}")
         response = "Произошла ошибка при переводе."
 
     await bot.delete_message(
@@ -172,43 +172,4 @@ async def translate_text(message: Message, state: FSMContext, bot: Bot):
         reply_markup=inl_translate_back(),
     )
 
-
-@fsm_router.callback_query(Recommendation.get_recommendation)
-async def recommendation(message: Message, state: FSMContext, bot: Bot):
-    chat_id = message.from_user.id
-    logger.info(f"[Recommendation] User {chat_id} message: {message}")
-    loading_message = await bot.send_photo(
-        chat_id=chat_id,
-        photo=FSInputFile(Path.IMAGES.value.format(file="gpt")),
-        caption="Думаю"
-    )
-
-    loader = LoadingController(
-        bot=bot,
-        chat_id=chat_id,
-        message=loading_message,
-        text="Думаю",
-    )
-    await loader.start()
-
-    data = await state.get_data()
-    msg_list = GPTMessage('recommendation.txt', data['messages'])
-    msg_list.update(GPTRole.USER, message.text)
-    response = await chat_gpt.request(msg_list, bot)
-    msg_list.update(GPTRole.CHAT, response)
-    await state.update_data(messages=msg_list.message_list)
-    await bot.delete_message(
-        chat_id=message.from_user.id,
-        message_id=message.message_id,
-    )
-    await loader.stop()
-
-    logger.info(f"[Recommendation] GPT {chat_id} answer: {response}")
-
-    await bot.send_photo(
-        chat_id=message.from_user.id,
-        photo=FSInputFile(Path.IMAGES.value.format(file='recommendation.png')),
-        caption=response,
-        reply_markup=inl_cancel()
-    )
 

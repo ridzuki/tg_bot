@@ -14,7 +14,7 @@ from .fsm import GPTRequest, CelebrityTalk, QUIZ, Translate, Recommendation
 
 from keyboards import inl_cancel
 from keyboards.inl_keyboards import inl_main_menu, inl_random_menu, inl_gpt_cancel, inl_talk_menu, inl_quiz_topics, \
-    inl_translate_menu, inl_translate_back, inl_recommendation_topics, inl_recommendation_genre, inl_recommend_more
+    inl_translate_menu, inl_translate_back, inl_recommendation_topics, inl_recommendation_genre, inl_recommendation_actions
 from keyboards.callback_data import CallbackMenu, CallbackTalk, CallbackQUIZ, CallbackTranslate, CallbackRecommend
 
 from utils import FileManager
@@ -34,7 +34,7 @@ async def get_main_menu(callback: CallbackQuery, callback_data: CallbackMenu, st
     """
         Главное меню с кнопками
     """
-    logger.info(f"[Menu] User {callback.from_user.id} opens the main menu")
+    logger.info(f"[MenuINL] User {callback.from_user.id} opens the main menu")
     await state.clear()
     await bot.edit_message_media(
         media=InputMediaPhoto(
@@ -52,10 +52,9 @@ async def get_main_menu(callback: CallbackQuery, callback_data: CallbackMenu, st
 async def get_random_fact(callback: CallbackQuery, callback_data: CallbackMenu, bot: Bot):
     """
         Генерация случайного факта + картинки через GPT
-        с анимацией 'Ищу факт...' и TYPING
     """
     chat_id = callback.from_user.id
-    logger.info(f"[Random] User {chat_id} asks for a random fact")
+    logger.info(f"[RandomINL] User {chat_id} asks for a random fact")
 
     loading_message = await bot.send_photo(
         chat_id=chat_id,
@@ -89,7 +88,7 @@ async def get_random_fact(callback: CallbackQuery, callback_data: CallbackMenu, 
         image_url = Path.IMAGES.value.format(file=callback_data.button)
 
     await loader.stop()
-    logger.info(f"[Random] Sending to {chat_id} a random fact: {caption}")
+    logger.info(f"[RandomINL] Sending to {chat_id} a random fact: {caption}")
 
     await bot.send_photo(
         chat_id=callback.from_user.id,
@@ -100,15 +99,15 @@ async def get_random_fact(callback: CallbackQuery, callback_data: CallbackMenu, 
 
     try:
         await bot.delete_message(chat_id=chat_id, message_id=loading_message.message_id)
-        logger.info(f"[Random] Message deleted {chat_id}")
+        logger.info(f"[RandomINL] Message deleted {chat_id}")
     except:
-        logger.warning(f"[Random] Error in deleting {chat_id}")
+        logger.warning(f"[RandomINL] Error in deleting {chat_id}")
 
 
 @inline_router.callback_query(CallbackMenu.filter(F.button == 'quiz'))
 async def get_quiz_menu(callback: CallbackQuery, callback_data: CallbackMenu, state:  FSMContext,bot: Bot):
     chat_id=callback.from_user.id
-    logger.info(f"[QUIZ_INL] User {chat_id} asks for a quiz")
+    logger.info(f"[QUIZINL] User {chat_id} asks for a quiz")
     await state.set_state(QUIZ.game)
     messages = await state.get_value("messages")
     if not messages:
@@ -127,7 +126,7 @@ async def get_quiz_menu(callback: CallbackQuery, callback_data: CallbackMenu, st
 @inline_router.callback_query(CallbackQUIZ.filter(F.button == 'quiz'))
 async def get_subj(callback: CallbackQuery, callback_data: CallbackQUIZ, state: FSMContext, bot: Bot):
     chat_id=callback.from_user.id
-    logger.info(f"[QUIZ_INL] User {chat_id} chooses a subject: {callback_data.subject}")
+    logger.info(f"[QUIZINL] User {chat_id} chooses a subject: {callback_data.subject}")
     message_list = await state.get_value('messages')
     if not message_list:
         message_list = GPTMessage('quiz')
@@ -152,7 +151,7 @@ async def get_gpt_menu(callback: CallbackQuery, callback_data: CallbackMenu, sta
         Разговоры с GPT
     """
     chat_id=callback.from_user.id
-    logger.info(f"[GPT] User {chat_id} asks for a GPT conversation")
+    logger.info(f"[GPTINL] User {chat_id} asks for a GPT conversation")
     await state.set_state(GPTRequest.wait_for_request)
     await state.update_data(message_id=callback.message.message_id)
     await bot.edit_message_media(
@@ -172,7 +171,7 @@ async def get_talk_menu(callback: CallbackQuery, callback_data: CallbackMenu, st
         Меню разговоров с известными личностями
     """
     chat_id=callback.from_user.id
-    logger.info(f"[Talk_INL] User {chat_id} asks for a talk conversation")
+    logger.info(f"[TalkINL] User {chat_id} asks for a talk conversation")
     await state.clear()
     await bot.edit_message_media(
         media=InputMediaPhoto(
@@ -191,7 +190,7 @@ async def talk_with_celebrity(callback: CallbackQuery, callback_data: CallbackTa
         Разговоры с известными личностями
     """
     chat_id=callback.from_user.id
-    logger.info(f"[Talk_INL] User {chat_id} chooses a celebrity: {callback_data.celebrity}")
+    logger.info(f"[TalkINL] User {chat_id} chooses a celebrity: {callback_data.celebrity}")
     await state.set_state(CelebrityTalk.dialog)
     message_list = GPTMessage(callback_data.celebrity)
     response = await chat_gpt.request(message_list, bot)
@@ -215,7 +214,7 @@ async def translate_menu(callback: CallbackQuery, callback_data: CallbackMenu, b
         Меню переводчика
     """
     chat_id = callback.from_user.id
-    logger.info(f"[Translate] User {chat_id} opens translation menu")
+    logger.info(f"[TranslateINL] User {chat_id} opens translation menu")
 
     await bot.edit_message_media(
         media=InputMediaPhoto(
@@ -235,7 +234,7 @@ async def translate_text(callback: CallbackQuery, callback_data: CallbackTransla
     """
     lang = callback_data.language
     chat_id = callback.from_user.id
-    logger.info(f"[Translate] User {chat_id} selected language: {lang}")
+    logger.info(f"[TranslateINL] User {chat_id} selected language: {lang}")
 
     await state.set_state(Translate.text)
     await state.update_data(language=lang, message_id=callback.message.message_id)
@@ -257,7 +256,7 @@ async def recommendation_menu(callback: CallbackQuery, callback_data: CallbackMe
         Меню рекомендаций
     """
     chat_id = callback.from_user.id
-    logger.info(f"[Recommendation] User {chat_id} opens recommendation menu")
+    logger.info(f"[RecommendationINL] User {chat_id} opens recommendation menu")
 
     await bot.edit_message_media(
         media=InputMediaPhoto(
@@ -278,7 +277,7 @@ async def genres_menu(callback: CallbackQuery, callback_data: CallbackRecommend,
     chat_id = callback.from_user.id
     message_id = callback.message.message_id
     category = callback_data.category
-    logger.info(f"[Recommendation] User {chat_id} opens genre menu for category: {category}")
+    logger.info(f"[RecommendationINL] User {chat_id} opens genre menu for category: {category}")
 
     await bot.edit_message_media(
         media=InputMediaPhoto(
@@ -291,30 +290,138 @@ async def genres_menu(callback: CallbackQuery, callback_data: CallbackRecommend,
     )
 
 
-@inline_router.callback_query(CallbackRecommend.filter(F.genre))
+@inline_router.callback_query(CallbackRecommend.filter((F.genre) & (F.button != "dislike")))
 async def take_recommendation(callback: CallbackQuery, callback_data: CallbackRecommend, state: FSMContext, bot: Bot):
     """
         Выдача рекомендаций
     """
     chat_id = callback.from_user.id
-    message_id = callback.message.message_id
     category = callback_data.category
     genre = callback_data.genre
-    logger.info(f"[Recommendation] User {chat_id} takes recommendation for category: {category} and genre: {genre}")
-    await state.set_state(Recommendation.get_recommendation)
+    logger.info(f"[RecommendationINL] User {chat_id} takes recommendation for category: {category} and genre: {genre}")
+
+    data = await state.get_data()
+    dislikes = data.get("dislikes", [])
+
+    logger.info(
+        f"[RecommendationINL] Current dislikes for user={chat_id}: {dislikes}"
+    )
+
+    loading_message = await bot.send_photo(
+        chat_id=chat_id,
+        photo=FSInputFile(Path.IMAGES.value.format(file='recommendation')),
+        caption="Вспоминаю рекомендации"
+    )
+
+    loader = LoadingController(
+        bot=bot,
+        chat_id=chat_id,
+        message=loading_message,
+        text="Вспоминаю рекомендации",
+    )
+
+    await loader.start()
+
     msg_list = GPTMessage('recommendation.txt')
-    msg_list.update(GPTRole.USER, f"{category} {genre}")
-    await state.update_data(messages=msg_list.message_list, category=category, genre=genre)
+    msg_list.update(GPTRole.USER, f"{category} {genre}. Не предлагай: {dislikes}")
+
+    logger.info(f"[RecommendationINL] GPT request | user={chat_id} | prompt={msg_list.json()}")
 
     response = await chat_gpt.request(msg_list, bot)
-    msg_list.update(GPTRole.CHAT, response)
+
+    logger.info(
+        f"[RecommendationINL] GPT response | user={chat_id} | response_preview={response}")
+
+    await state.update_data(messages=msg_list)
+    await loader.stop()
+
     await bot.edit_message_media(
         media=InputMediaPhoto(
-            media=FSInputFile(Path.IMAGES.value.format(file=callback_data.button)),
+            media=FSInputFile(Path.IMAGES.value.format(file='recommendation')),
             caption=response,
         ),
         chat_id=chat_id,
-        message_id=message_id,
-        reply_markup=inl_cancel()
+        message_id=callback.message.message_id,
+        reply_markup=inl_recommendation_actions(category, genre)
     )
 
+    logger.info(
+        f"[RecommendationINL] Recommendation sent | user={chat_id} | message_id={callback.message.message_id}"
+    )
+
+    try:
+        await bot.delete_message(chat_id=chat_id, message_id=loading_message.message_id)
+        logger.info(f"[RecommendationINL] Message deleted {chat_id}")
+    except:
+        logger.warning(f"[RecommendationINL] Error in deleting {chat_id}")
+
+
+@inline_router.callback_query(CallbackRecommend.filter(F.button == 'dislike'))
+async def dislike_item(callback: CallbackQuery, callback_data: CallbackRecommend, state: FSMContext, bot: Bot):
+    """
+        Обработка кнопки 'Не нравится'
+    """
+    chat_id = callback.from_user.id
+    category = callback_data.category
+    genre = callback_data.genre
+    raw_item = callback_data.item
+    if raw_item:
+        item = raw_item.strip().split('—', 1)[0]
+    else:
+        item = None
+
+    logger.info(f"[RecommendationINL] User {chat_id} dislikes item: {item}")
+
+    data = await state.get_data()
+    dislikes = data.get("dislikes", [])
+
+    if item and item not in dislikes:
+        dislikes.append(item)
+        logger.info(f"[RecommendationINL] Item added to dislikes | user={chat_id} | dislikes={dislikes}")
+    else:
+        logger.debug(f"[RecommendationINL] Item already in dislikes or empty | user={chat_id}")
+
+    await state.update_data(dislikes=dislikes)
+
+    loading_message = await bot.send_photo(
+        chat_id=chat_id,
+        photo=FSInputFile(Path.IMAGES.value.format(file='recommendation')),
+        caption="Вспоминаю другие рекомендации..."
+    )
+
+    loader = LoadingController(
+        bot=bot,
+        chat_id=chat_id,
+        message=loading_message,
+        text="Вспоминаю рекомендации",
+    )
+    await loader.start()
+
+    msg_list = GPTMessage('recommendation.txt')
+    msg_list.update(GPTRole.USER, f"{category} {genre}. Не интересуют: {dislikes}")
+
+    logger.info(f"[RecommendationINL] GPT request after dislike | user={chat_id} | prompt={msg_list.json()}")
+
+    response = await chat_gpt.request(msg_list, bot)
+
+    logger.info(f"[RecommendationINL] GPT response after dislike | user={chat_id} | response_preview={response}")
+
+    await state.update_data(messages=msg_list)
+    await loader.stop()
+
+    await bot.edit_message_media(
+        media=InputMediaPhoto(
+            media=FSInputFile(Path.IMAGES.value.format(file='recommendation')),
+            caption=response,
+        ),
+        chat_id=chat_id,
+        message_id=callback.message.message_id,
+        reply_markup=inl_recommendation_actions(category, genre)
+    )
+
+    logger.info(f"[RecommendationINL] Updated recommendation after dislike | user={chat_id}")
+
+    try:
+        await bot.delete_message(chat_id=chat_id, message_id=loading_message.message_id)
+    except:
+        logger.warning(f"[RecommendationINL] Failed to delete loading message {chat_id}")

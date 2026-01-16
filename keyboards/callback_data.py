@@ -23,3 +23,4 @@ class CallbackRecommend(CallbackData, prefix="CR"):
     button: str
     category: str
     genre: str
+    item: str | None = None

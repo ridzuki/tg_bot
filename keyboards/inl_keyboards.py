@@ -207,5 +207,21 @@ def inl_recommendation_genre(category):
     keyboard.adjust(2)
     return keyboard.as_markup()
 
-def inl_recommend_more():
-    pass
+def inl_recommendation_actions(category: str, genre: str):
+    keyboard = InlineKeyboardBuilder()
+    keyboard.button(
+        text="Не нравится ❌",
+        callback_data=CallbackRecommend(
+            button="dislike",
+            category=category,
+            genre=genre
+        )
+    )
+    keyboard.button(
+        text="Закончить!",
+        callback_data=CallbackMenu(button="start")
+    )
+    keyboard.adjust(1)
+    return keyboard.as_markup()
+
+
