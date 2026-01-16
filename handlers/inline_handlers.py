@@ -270,8 +270,8 @@ async def recommendation_menu(callback: CallbackQuery, callback_data: CallbackMe
     )
 
 
-@inline_router.callback_query(CallbackRecommend.filter(F.category))
-async def genres_menu(callback: CallbackQuery, callback_data: CallbackRecommend, state: FSMContext, bot: Bot):
+@inline_router.callback_query(CallbackRecommend.filter(F.category and ~F.genre))
+async def genres_menu(callback: CallbackQuery, callback_data: CallbackRecommend, bot: Bot):
     """
         Меню жанров для выбранной темы
     """
@@ -310,7 +310,7 @@ async def take_recommendation(callback: CallbackQuery, callback_data: CallbackRe
     msg_list.update(GPTRole.CHAT, response)
     await bot.edit_message_media(
         media=InputMediaPhoto(
-            media=FSInputFile(Path.IMAGES.value.format(file=callback_data.genre)),
+            media=FSInputFile(Path.IMAGES.value.format(file=callback_data.button)),
             caption=response,
         ),
         chat_id=chat_id,

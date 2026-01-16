@@ -189,13 +189,13 @@ def inl_recommendation_genre(category):
         return None
 
     keyboard = InlineKeyboardBuilder()
-    for genre_id, display_name in data["genres"].items():
+    for genre_name in data["genres"]:
         keyboard.button(
-            text=display_name,
+            text= genre_name,
             callback_data=CallbackRecommend(
                 button='recommendation',
-                category='',
-                genre=genre_id
+                category=category,
+                genre=genre_name
             )
         )
 

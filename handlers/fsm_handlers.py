@@ -177,23 +177,38 @@ async def translate_text(message: Message, state: FSMContext, bot: Bot):
 async def recommendation(message: Message, state: FSMContext, bot: Bot):
     chat_id = message.from_user.id
     logger.info(f"[Recommendation] User {chat_id} message: {message}")
-
-    await bot.send_chat_action(
+    loading_message = await bot.send_photo(
         chat_id=chat_id,
-        action=ChatAction.TYPING
+        photo=FSInputFile(Path.IMAGES.value.format(file="gpt")),
+        caption="Думаю"
     )
-    message_list = await state.get_value('messages')
-    recommendation = await state.get_value('genre')
-    message_list.update(GPTRole.USER, message)
-    response = await chat_gpt.request(message_list, bot)
-    message_list.update(GPTRole.CHAT, response)
-    await state.update_data(messages=message_list)
+
+    loader = LoadingController(
+        bot=bot,
+        chat_id=chat_id,
+        message=loading_message,
+        text="Думаю",
+    )
+    await loader.start()
+
+    data = await state.get_data()
+    msg_list = GPTMessage('recommendation.txt', data['messages'])
+    msg_list.update(GPTRole.USER, message.text)
+    response = await chat_gpt.request(msg_list, bot)
+    msg_list.update(GPTRole.CHAT, response)
+    await state.update_data(messages=msg_list.message_list)
+    await bot.delete_message(
+        chat_id=message.from_user.id,
+        message_id=message.message_id,
+    )
+    await loader.stop()
+
     logger.info(f"[Recommendation] GPT {chat_id} answer: {response}")
+
     await bot.send_photo(
         chat_id=message.from_user.id,
-        photo=FSInputFile(Path.IMAGES.value.format(file='recommendation')),
+        photo=FSInputFile(Path.IMAGES.value.format(file='recommendation.png')),
         caption=response,
         reply_markup=inl_cancel()
     )
-
 
