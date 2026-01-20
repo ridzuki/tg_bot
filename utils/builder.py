@@ -24,16 +24,3 @@ def build_topic_map(file_path: Path, file_name: str):
 
     return topic_map
 
-    #     genres_list = [g.strip() for g in genres_str.split(",")]
-    #     genres_map = {}
-    #     for genre in genres_list:
-    #         genre_id = f"{topic_name}_{genre.lower().replace(' ', '_')}"
-    #         genres_map[genre_id] = genre
-    #
-    #     topic_map[topic_name] = {
-    #         "category": category,
-    #         "genres": genres_map
-    #     }
-    # return topic_map
-
-

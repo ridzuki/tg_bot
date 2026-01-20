@@ -18,4 +18,4 @@ class Translate(StatesGroup):
 
 
 class Recommendation(StatesGroup):
-    get_recommendation = State()
+    dislikes = State()

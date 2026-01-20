@@ -5,9 +5,9 @@ from aiogram.enums.chat_action import ChatAction
 from aiogram.fsm.context import FSMContext
 
 from keyboards.inl_keyboards import inl_translate_back
-from logger import logger
+from logger import get_logger
 
-from .fsm import GPTRequest, CelebrityTalk, QUIZ, Translate, Recommendation
+from .fsm import GPTRequest, CelebrityTalk, QUIZ, Translate
 
 from keyboards import inl_gpt_menu, inl_cancel, inl_quiz_menu
 
@@ -20,6 +20,8 @@ from ai.enums import GPTRole
 
 fsm_router = Router()
 
+logger = get_logger("FSM")
+
 @fsm_router.message(GPTRequest.wait_for_request)
 async def gpt_wait_for_request(message: Message, bot: Bot):
     """
@@ -27,7 +29,7 @@ async def gpt_wait_for_request(message: Message, bot: Bot):
     """
     chat_id = message.chat.id
 
-    logger.info(f"[GPTRequestFSM] User {chat_id} answer: {message.text}")
+    logger.info("GPT request received", extra={"user_id": chat_id})
 
     loading_message = await bot.send_photo(
         chat_id=chat_id,
@@ -50,9 +52,9 @@ async def gpt_wait_for_request(message: Message, bot: Bot):
     )
     try:
         response = await chat_gpt.request(msg_list, bot)
-        logger.info(f"[GPTRequestFSM] GPT {chat_id} answer: {response}")
+        logger.info("GPT response sent", extra={"user_id": chat_id})
     except Exception as e:
-        logger.error(f"[GPTRequestFSM] Error request processing GPT answer {chat_id}: {e}")
+        logger.error("Error processing GPT response", extra={"user_id": chat_id})
         response = "Error"
 
     await loader.stop()
@@ -73,7 +75,7 @@ async def user_answer(message: Message, state: FSMContext, bot: Bot):
         Обработка ответа на QUIZ от юзера
     """
     chat_id = message.from_user.id
-    logger.info(f"[QUIZFSM] User {chat_id} answer: {message.text}")
+    logger.info("Quiz answer received", extra={"user_id": chat_id})
 
     message_list = await state.get_value('messages')
     message_id = await state.get_value('message_id')
@@ -86,7 +88,7 @@ async def user_answer(message: Message, state: FSMContext, bot: Bot):
         score += 1
         await state.update_data(score=score)
     response += f'\n\nВаш счет: {score} баллов!'
-    logger.info(f"[QUIZFSM] GPT {chat_id} answer: {response}")
+    logger.info("Quiz response ready", extra={"user_id": chat_id})
 
     await bot.delete_message(
         chat_id=message.from_user.id,
@@ -109,7 +111,7 @@ async def celebrity_talk(message: Message, state: FSMContext, bot: Bot):
         Обработка сообщения от пользователя на разговор с известными личностями
     """
     chat_id=message.chat.id
-    logger.info(f"[CelebrityTalkFSM] User {chat_id} answer: {message.text}")
+    logger.info("Celebrity talk message received", extra={"user_id": chat_id})
 
     await bot.send_chat_action(
         chat_id=chat_id,
@@ -121,7 +123,7 @@ async def celebrity_talk(message: Message, state: FSMContext, bot: Bot):
     response = await chat_gpt.request(message_list, bot)
     message_list.update(GPTRole.CHAT, response)
     await state.update_data(messages=message_list)
-    logger.info(f"[CelebrityTalkFSM] GPT {chat_id} answer: {response}")
+    logger.info("Celebrity talk response ready", extra={"user_id": chat_id})
     await bot.send_photo(
         chat_id=message.from_user.id,
         photo=FSInputFile(Path.IMAGES.value.format(file=celebrity)),
@@ -140,7 +142,7 @@ async def translate_text(message: Message, state: FSMContext, bot: Bot):
     message_id = data.get('message_id')
     language = data.get('language')
     user_text = message.text
-    logger.info(f"[Translate] User {chat_id} text: {user_text}")
+    logger.info("Translate text received", extra={"user_id": chat_id})
 
     await bot.send_chat_action(
         chat_id=chat_id,
@@ -152,9 +154,9 @@ async def translate_text(message: Message, state: FSMContext, bot: Bot):
 
     try:
         response = await chat_gpt.request(msg_list, bot)
-        logger.info(f"[TranslateFSM] GPT {chat_id} answer: {response}")
+        logger.info("Translate response ready", extra={"user_id": chat_id})
     except Exception as e:
-        logger.error(f"[TranslateFSM] Error request processing GPT answer {chat_id}: {e}")
+        logger.error("Error processing translate response", extra={"user_id": chat_id})
         response = "Произошла ошибка при переводе."
 
     await bot.delete_message(
@@ -171,5 +173,3 @@ async def translate_text(message: Message, state: FSMContext, bot: Bot):
         message_id=message_id,
         reply_markup=inl_translate_back(),
     )
-
-

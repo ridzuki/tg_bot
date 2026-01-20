@@ -207,7 +207,7 @@ def inl_recommendation_genre(category):
     keyboard.adjust(2)
     return keyboard.as_markup()
 
-def inl_recommendation_actions(category: str, genre: str):
+def inl_recommendation_actions(category, genre, item: str | None = None):
     keyboard = InlineKeyboardBuilder()
     keyboard.button(
         text="Не нравится ❌",
@@ -223,5 +223,3 @@ def inl_recommendation_actions(category: str, genre: str):
     )
     keyboard.adjust(1)
     return keyboard.as_markup()
-
-

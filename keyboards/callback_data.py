@@ -21,6 +21,6 @@ class CallbackTranslate(CallbackData, prefix="CTLang"):
 
 class CallbackRecommend(CallbackData, prefix="CR"):
     button: str
-    category: str
-    genre: str
+    category: str | None = None
+    genre: str | None = None
     item: str | None = None
