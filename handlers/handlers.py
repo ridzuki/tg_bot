@@ -1,6 +1,6 @@
 from aiogram import Router, F, Bot
 from aiogram.filters import Command, CommandObject
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message
 from aiogram.types.input_file import FSInputFile
 
 from keyboards.inl_keyboards import inl_main_menu
@@ -11,7 +11,6 @@ from logger import get_logger
 
 command_router = Router()
 
-# Structured logger for command handlers
 logger = get_logger("COMMANDS")
 
 async def send_start_photo(target_message: Message, cmd_name: str):

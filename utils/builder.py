@@ -4,7 +4,7 @@ from utils.enum_path import Path
 
 def build_topic_map(file_path: Path, file_name: str):
     """
-    Создаёт словарь на основе файла с данными
+        Создаёт словарь на основе файла с данными
     """
     topic_map = {}
     lines = FileManager.read_txt(file_path, file_name).splitlines()

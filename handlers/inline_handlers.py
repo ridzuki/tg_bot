@@ -107,6 +107,9 @@ async def get_random_fact(callback: CallbackQuery, callback_data: CallbackMenu, 
 
 @inline_router.callback_query(CallbackMenu.filter(F.button == 'quiz'))
 async def get_quiz_menu(callback: CallbackQuery, callback_data: CallbackMenu, state:  FSMContext,bot: Bot):
+    """
+        Меню квиза
+    """
     chat_id=callback.from_user.id
     logger.info("Open quiz menu", extra={"user_id": chat_id})
     await state.set_state(QUIZ.game)
@@ -126,6 +129,9 @@ async def get_quiz_menu(callback: CallbackQuery, callback_data: CallbackMenu, st
 
 @inline_router.callback_query(CallbackQUIZ.filter(F.button == 'quiz'))
 async def get_subj(callback: CallbackQuery, callback_data: CallbackQUIZ, state: FSMContext, bot: Bot):
+    """
+        Выбор темы квиза
+    """
     chat_id=callback.from_user.id
     logger.info(f"Quiz subject chosen: {callback_data.subject}", extra={"user_id": chat_id})
     message_list = await state.get_value('messages')
@@ -145,7 +151,6 @@ async def get_subj(callback: CallbackQuery, callback_data: CallbackQUIZ, state: 
     )
 
 
-# TODO: сделать удаление сообщения если это сообщение-меню или начат новый запрос (через кнопку)
 @inline_router.callback_query(CallbackMenu.filter(F.button == 'gpt'))
 async def get_gpt_menu(callback: CallbackQuery, callback_data: CallbackMenu, state: FSMContext, bot: Bot):
     """
@@ -296,6 +301,9 @@ async def genres_menu(callback: CallbackQuery, callback_data: CallbackRecommend,
 
 @inline_router.callback_query(CallbackRecommend.filter(F.button == 'recommendation'))
 async def give_recommendation(callback: CallbackQuery, callback_data: CallbackRecommend, state: FSMContext, bot: Bot):
+    """
+        Первичная выдача рекомендации
+    """
     chat_id = callback.from_user.id
     category = callback_data.category
     genre = callback_data.genre
@@ -335,8 +343,9 @@ async def give_recommendation(callback: CallbackQuery, callback_data: CallbackRe
 
     match = re.search(r'"([^"]+)"\s+—', response)
     item_title = match.group(1) if match else None
+    logger.debug(f"Extracted item title: {item_title}", extra={"user_id": chat_id})
+
     if not item_title:
-        # Fallbacks: try any quoted string, then first line before newline/dash
         alt_match = re.search(r'"([^"]+)"', response)
         if alt_match:
             item_title = alt_match.group(1)
@@ -373,9 +382,11 @@ async def give_recommendation(callback: CallbackQuery, callback_data: CallbackRe
 
 
 @inline_router.callback_query(CallbackRecommend.filter(F.button == 'dislike'))
-async def dislike_recommendation(callback: CallbackQuery, callback_data: CallbackRecommend, state: FSMContext, bot: Bot):
+async def dislike_recommendation(callback: CallbackQuery, state: FSMContext, bot: Bot):
+    """
+        Выдача рекомендации после дизлайка
+    """
     chat_id = callback.from_user.id
-    item = (callback_data.item or "").strip()
     logger.info("Dislike clicked", extra={"user_id": chat_id})
 
     data = await state.get_data()
@@ -427,6 +438,8 @@ async def dislike_recommendation(callback: CallbackQuery, callback_data: Callbac
 
     match = re.search(r'"([^"]+)"\s+—', response)
     item_title = match.group(1) if match else None
+    logger.debug(f"Extracted item title after dislike: {item_title}", extra={"user_id": chat_id})
+
     await state.update_data(current={"category": category, "genre": genre, "item": item_title})
     logger.debug(f"Next item extracted and state updated: {item_title}", extra={"user_id": chat_id})
 

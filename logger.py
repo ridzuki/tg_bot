@@ -16,7 +16,6 @@ LOG_DATEFMT = "%Y-%m-%d %H:%M:%S"
 LOG_LEVEL = logging.INFO
 
 class _ContextDefaultsFilter(logging.Filter):
-    """Ensure custom fields always exist to avoid KeyError in formatters."""
     def filter(self, record: logging.LogRecord) -> bool:
         if not hasattr(record, "feature"):
             record.feature = "-"
@@ -51,24 +50,13 @@ if not _base_logger.handlers:
     _base_logger.addHandler(console_handler)
 
 class _FeatureAdapter(logging.LoggerAdapter):
-    """LoggerAdapter that keeps a 'feature' and allows passing user_id/request_id per call.
-
-    Usage:
-        logger = get_logger("GPT")
-        logger.info("Request sent", extra={"user_id": 123})
-    """
     def process(self, msg: str, kwargs: Dict[str, Any]):
         extra = kwargs.setdefault("extra", {})
-        # Preserve existing extra, but ensure feature from adapter's context is present
         extra.setdefault("feature", self.extra.get("feature", "-"))
         return msg, kwargs
 
 
 def get_logger(feature: Optional[str] = None) -> logging.Logger:
-    """Return a logger (LoggerAdapter) pre-filled with feature name.
-
-    The returned object implements the Logger interface.
-    """
     return _FeatureAdapter(_base_logger, {"feature": feature or "-"})
 
 logger = get_logger()
